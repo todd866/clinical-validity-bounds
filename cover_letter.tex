@@ -1,0 +1,40 @@
+\documentclass[11pt]{letter}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+
+\signature{Ian Todd\\Sydney Medical School\\University of Sydney}
+\address{Sydney Medical School\\University of Sydney\\Sydney, NSW 2006, Australia\\itod2305@uni.sydney.edu.au}
+
+\begin{document}
+
+\begin{letter}{Editorial Office\\npj Health Systems}
+
+\opening{Dear Editors,}
+
+I am pleased to submit ``The Dimensional Validity Bound: A Structural Limit on Clinical AI in Multimorbidity'' for consideration at \textit{npj Health Systems}.
+
+\textbf{Why this matters now.} The Epic Sepsis Model's external validation failure (AUC 0.63), IBM Watson Oncology's withdrawal, and clinical alert override rates exceeding 90\% share a common cause: patient complexity exceeding algorithmic tractability. The standard response---more data, better models---assumes these are technical limitations. We demonstrate they are structural impossibilities.
+
+\textbf{What we show.} When patient state dimensionality exceeds observer capacity, no amount of additional training data can restore validity. We formalize this as the \textit{dimensional validity bound}: the critical ratio $r = D_{\text{observer}}/D_{\text{patient}}$ below which algorithmic coupling becomes unstable. Using MIMIC-IV (N=425,216 hospitalizations), we demonstrate:
+\begin{itemize}
+    \item Effective dimensionality \textit{decreases} with multimorbidity ($D_{\text{eff}}$ = 44.3 $\to$ 37.5 $\to$ 29.5), supporting the Lipsitz-Goldberger ``loss of complexity'' hypothesis---illness is a manifold collapse
+    \item Classifier AUC follows a U-shaped pattern: 0.867 (low), \textbf{0.835} (moderate), 0.859 (high multimorbidity)---worst performance in the ``zone of maximum entropy'' where priors are flat and outcomes not yet deterministic
+    \item Diagnostic cascade probability exceeds 50\% beyond 14 tests; coupling destabilizes at $r < 0.3$
+\end{itemize}
+
+\textbf{The conceptual advance.} Berisha et al.\ (2021, \textit{npj Digital Medicine}) identified the curse of dimensionality in clinical AI as a dataset problem. We extend this to its logical conclusion: even perfect datasets cannot overcome intrinsic dimensional mismatch between algorithms and complex patients. This reframes AI failure in multimorbidity from ``needs more development'' to ``operating outside valid bounds.''
+
+\textbf{Clinical and regulatory implications.} We propose Dimensional Validity Audits as a regulatory requirement for clinical AI---analogous to subgroup efficacy requirements for pharmaceuticals. Complexity metrics should appear in Model Cards, trigger real-time confidence warnings, and inform postmarket surveillance. This speaks directly to FDA Good Machine Learning Practice, the EU AI Act, and emerging TGA/MHRA frameworks.
+
+\textbf{Fit with npj Health Systems.} This work sits at the intersection of clinical AI limitations, health system implementation challenges, and actionable regulatory translation---core themes of the journal. The dimensional validity bound provides the conceptual vocabulary for a problem clinicians experience daily but lack formal language to articulate.
+
+The manuscript has not been published elsewhere and is not under consideration at another journal. All authors (sole author) approve the submission.
+
+\closing{Sincerely,}
+
+\end{letter}
+\end{document}
