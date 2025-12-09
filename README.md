@@ -2,8 +2,8 @@
 
 **A Structural Limit on Clinical AI in Multimorbidity**
 
-> **Journal:** npj Health Systems
-> **Status:** Submitted December 6, 2025
+> **Target Journal:** JAMIA (Journal of the American Medical Informatics Association)
+> **Status:** Preparing for submission
 > **Data:** MIMIC-IV (N=425,216)
 
 ## Overview
@@ -30,7 +30,7 @@ The dimensional validity bound is motivated by Fano's inequality: when observer 
 ## Repository Structure
 
 ```
-├── manuscript.tex/pdf      # npj Health Systems paper
+├── manuscript.tex/pdf      # JAMIA paper
 ├── cover_letter.tex/pdf    # Submission cover letter
 ├── references.bib          # Bibliography
 ├── code/
@@ -101,9 +101,9 @@ D_eff = (Σλᵢ)² / Σλᵢ²
 ```bibtex
 @article{todd2025dimensional,
   author  = {Todd, Ian},
-  title   = {The Dimensional Validity Bound: A Structural Limit on
-             Clinical AI in Multimorbidity},
-  journal = {npj Health Systems},
+  title   = {The Dimensional Validity Bound: Structural Limits of
+             Clinical AI Evaluation in Multimorbidity},
+  journal = {Journal of the American Medical Informatics Association},
   year    = {2025},
   note    = {Under review}
 }

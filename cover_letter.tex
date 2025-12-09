@@ -1,38 +1,35 @@
 \documentclass[11pt]{letter}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
 \usepackage{amsmath}
-\usepackage{geometry}
-\geometry{margin=1in}
 \usepackage{hyperref}
 
 \signature{Ian Todd\\Sydney Medical School\\University of Sydney}
-\address{Sydney Medical School\\University of Sydney\\Sydney, NSW 2006, Australia\\itod2305@uni.sydney.edu.au}
+\address{Sydney Medical School\\University of Sydney\\Sydney, NSW 2006\\Australia\\itod2305@uni.sydney.edu.au}
 
 \begin{document}
 
-\begin{letter}{Editorial Office\\npj Health Systems}
+\begin{letter}{Editor-in-Chief\\Journal of the American Medical Informatics Association\\Oxford University Press}
 
-\opening{Dear Editors,}
+\opening{Dear Editor-in-Chief,}
 
-I am pleased to submit ``The Dimensional Validity Bound: A Structural Limit on Clinical AI in Multimorbidity'' for consideration at \textit{npj Health Systems}.
+Please find enclosed our manuscript, \textbf{``The Dimensional Validity Bound: Structural Limits of Clinical AI Evaluation in Multimorbidity,''} for consideration as a Research and Applications article in \textit{JAMIA}. This manuscript provides a unifying theoretical framework that identifies conditions under which clinical decision support evaluation becomes structurally unreliable, independent of model architecture or training procedure.
 
-\textbf{Why this matters now.} The Epic Sepsis Model's external validation failure (AUC 0.63), IBM Watson Oncology's withdrawal, and clinical alert override rates exceeding 90\% share a common cause: patient complexity exceeding algorithmic tractability. The standard response---more data, better models---assumes these are technical limitations. We demonstrate they are structural impossibilities.
+\textbf{The problem:} While aggregate metrics like AUC are the gold standard for evaluating Clinical Decision Support Systems (CDSS), they implicitly assume that model validity is uniform across the patient population. Our study challenges this assumption. By applying information-theoretic principles to the MIMIC-IV database (N=425,216), we demonstrate the existence of a \textbf{Dimensional Validity Bound}---a critical complexity threshold below which Bayesian inference becomes structurally unstable.
 
-\textbf{What we show.} When patient state dimensionality exceeds observer capacity, no amount of additional training data can restore validity. We formalize this as the \textit{dimensional validity bound}: the critical ratio $r = D_{\text{observer}}/D_{\text{patient}}$ below which algorithmic coupling becomes unstable. Using MIMIC-IV (N=425,216 hospitalizations), we demonstrate:
+\textbf{What we show:}
 \begin{itemize}
-    \item Effective dimensionality \textit{decreases} with multimorbidity ($D_{\text{eff}}$ = 44.3 $\to$ 37.5 $\to$ 29.5), supporting the Lipsitz-Goldberger ``loss of complexity'' hypothesis---illness is a manifold collapse
-    \item Classifier AUC follows a U-shaped pattern: 0.867 (low), \textbf{0.835} (moderate), 0.859 (high multimorbidity)---worst performance in the ``zone of maximum entropy'' where priors are flat and outcomes not yet deterministic
-    \item Diagnostic cascade probability exceeds 50\% beyond 14 tests; coupling destabilizes at $r < 0.3$
+    \item A theoretical framework (the dimensional validity bound) derived from Fano's inequality
+    \item Three distinct failure mechanisms: projection error, noise amplification, hypothesis space explosion
+    \item Simulation evidence for a critical threshold at dimensional ratio $r \approx 0.3$
+    \item Real-world validation showing the predicted U-shaped performance curve in ICU mortality prediction
+    \item A paradoxical ``Zone of Maximum Entropy'' in moderate-complexity patients where aggregate AUC remains high (0.835) despite structural posterior instability
 \end{itemize}
 
-\textbf{The conceptual advance.} Berisha et al.\ (2021, \textit{npj Digital Medicine}) identified the curse of dimensionality in clinical AI as a dataset problem. We extend this to its logical conclusion: even perfect datasets cannot overcome intrinsic dimensional mismatch between algorithms and complex patients. This reframes AI failure in multimorbidity from ``needs more development'' to ``operating outside valid bounds.''
+\textbf{Why JAMIA:} This work addresses a fundamental methodological question about when CDSS evaluation metrics are valid---precisely the kind of cross-disciplinary, methods-focused research that \textit{JAMIA} publishes. The dimensional validity bound offers a theoretical mechanism explaining why clinical AI tools often degrade unpredictably in complex clinical environments, distinct from issues of dataset shift or implementation quality. We propose that \textbf{effective dimensionality ($D_{\text{eff}}$)} be reported as standard metadata for clinical datasets, alongside demographic parity and fairness metrics, providing a quantitative metric for algorithmic auditing and regulatory clearance of AI medical devices.
 
-\textbf{Clinical and regulatory implications.} We propose Dimensional Validity Audits as a regulatory requirement for clinical AI---analogous to subgroup efficacy requirements for pharmaceuticals. Complexity metrics should appear in Model Cards, trigger real-time confidence warnings, and inform postmarket surveillance. This speaks directly to FDA Good Machine Learning Practice, the EU AI Act, and emerging TGA/MHRA frameworks.
+\textbf{Significance:} Current evaluation practice assumes that validated models will perform comparably on deployment data. We show this assumption fails when complexity distributions differ---even if marginal distributions match. The zone of maximum entropy represents a systematic blind spot in current practice: invisible to aggregate metrics, occurring in an intermediate regime that intuition misses, and containing instances where errors may be most consequential.
 
-\textbf{Fit with npj Health Systems.} This work sits at the intersection of clinical AI limitations, health system implementation challenges, and actionable regulatory translation---core themes of the journal. The dimensional validity bound provides the conceptual vocabulary for a problem clinicians experience daily but lack formal language to articulate.
-
-The manuscript has not been published elsewhere and is not under consideration at another journal. All authors (sole author) approve the submission.
+This manuscript is original, has not been published, and is not under consideration elsewhere. I am the sole author and approve submission.
 
 \closing{Sincerely,}
 

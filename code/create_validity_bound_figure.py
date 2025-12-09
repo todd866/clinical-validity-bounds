@@ -4,13 +4,13 @@ Create Figure 3: The Dimensional Validity Bound
 Shows the U-shaped relationship between multimorbidity, D_eff, and AUC.
 Highlights the "zone of maximum entropy" where Bayesian inference fails.
 
-Styling harmonized with plot_npj_style.py (Figures 1-2).
+Styling harmonized with simulations.py (Figures 1-2).
 """
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-# NPJ-style settings (matched to Figures 1-2)
+# Publication style settings (matched to Figures 1-2)
 plt.rcParams.update({
     'font.family': 'sans-serif',
     'font.size': 11,

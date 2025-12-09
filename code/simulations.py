@@ -23,10 +23,10 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # =============================================================================
-# NPJ-STYLE FIGURE SETTINGS
+# PUBLICATION FIGURE SETTINGS
 # =============================================================================
 
-# NPJ Digital Medicine style settings
+# Publication style settings
 plt.rcParams.update({
     'font.family': 'sans-serif',
     'font.size': 11,
@@ -589,7 +589,7 @@ def plot_treatment_heterogeneity(df: pd.DataFrame, save_path: str = None):
 
     parts = ax1.violinplot(data_by_dx, positions=range(len(diagnoses)),
                           showmeans=True, showmedians=True)
-    # Style the violin plot with NPJ colors
+    # Style the violin plot with publication colors
     for pc in parts['bodies']:
         pc.set_facecolor(COLORS['primary'])
         pc.set_edgecolor(COLORS['primary'])

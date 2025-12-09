@@ -15,7 +15,7 @@
 \doublespacing
 
 \title{The Dimensional Validity Bound: \\
-A Structural Limit on Clinical AI in Multimorbidity}
+Structural Limits of Clinical AI Evaluation in Multimorbidity}
 
 \author{Ian Todd\\
 Sydney Medical School, University of Sydney, Sydney, Australia\\
@@ -28,190 +28,114 @@ Sydney Medical School, University of Sydney, Sydney, Australia\\
 \maketitle
 
 \begin{abstract}
-\textbf{Background:} Clinical decision support systems (CDSS) and AI-based diagnostic tools show promising performance in controlled evaluations but often fail unpredictably in complex, multimorbid patients. We demonstrate that this reflects a \emph{structural impossibility}: when patient state dimensionality exceeds algorithmic tractability bounds, no amount of additional data or model refinement can restore validity.
+\textbf{Objective:} Clinical decision support systems (CDSS) are typically evaluated using aggregate metrics like AUC, assuming the inference problem is well-posed across the patient population. We identify a structural failure mode where this assumption breaks: when patient effective dimensionality ($D_{\text{eff}}$) exceeds the model's representational capacity by a critical ratio.
 
-\textbf{Objectives:} To (1) derive the dimensional validity bound---the critical ratio of observer to patient complexity below which algorithmic recommendations become unreliable; (2) quantify diagnostic cascade probability as a function of test multiplicity; and (3) propose Dimensional Validity Audits as a regulatory framework for clinical AI deployment.
+\textbf{Materials and Methods:} We derive the ``Dimensional Validity Bound'' from information-theoretic principles (Fano's inequality) and validate it using simulation studies of coupled observer-system dynamics. We then apply this framework to 425,216 ICU admissions from the MIMIC-IV database, stratifying patients by multimorbidity burden to measure the relationship between physiological complexity and model performance.
 
-\textbf{Methods:} We model the clinician-patient dyad as a coupled dynamical system and motivate stability conditions using information-theoretic principles (Fano's inequality). We validate these predictions using MIMIC-IV (N=425,216 hospitalizations), computing effective dimensionality ($D_{\text{eff}}$) from clinical features and stratifying mortality prediction performance by multimorbidity burden.
+\textbf{Results:} Simulations confirm a critical threshold at dimensional ratio $r \approx 0.3$, below which inference becomes unstable. In MIMIC-IV, we observe a paradoxical U-shaped performance curve: models perform best on low-complexity (healthy) and high-complexity (stereotyped/collapsed) patients, but fail in the ``moderate complexity'' regime ($D_{\text{eff}} \approx 37.5$). This ``Zone of Maximum Entropy'' represents a systematic blind spot where aggregate AUC remains high (0.835) despite structural posterior instability.
 
-\textbf{Results:} The dimensional validity bound occurs at $r = D_{\text{obs}}/D_{\text{pat}} \approx 0.3$; below this threshold, algorithmic coupling becomes unstable. Diagnostic cascade probability exceeds 50\% beyond 14 tests at 5\% false-positive rate. MIMIC-IV analysis (N=425,216) revealed that effective dimensionality \textit{decreases} with multimorbidity burden ($D_{\text{eff}}$ = 44.3 low, 37.5 moderate, 29.5 high)---supporting the complex systems view that illness represents a loss of physiological complexity \citep{cohen2022}. Classifier AUC showed a U-shaped relationship, with the \textit{moderate} multimorbidity stratum showing lowest performance (0.835)---the ``zone of maximum entropy'' where posterior instability is maximal.
+\textbf{Discussion:} Current evaluation protocols that report aggregate metrics mask validity failures in moderate-complexity populations. We propose that $D_{\text{eff}}$ be reported as standard metadata for clinical datasets.
 
-\textbf{Conclusions:} Patient complexity imposes fundamental validity bounds on clinical AI---not as a limitation to be overcome, but as a law of information geometry. Just as regulatory agencies require safety trials for pharmaceuticals, we propose Dimensional Validity Audits as a requirement for clinical AI: systems must demonstrate maintained performance across the complexity spectrum or flag when operating outside validated bounds.
+\textbf{Conclusion:} Statistical learning in healthcare faces structural limits defined by patient complexity. Recognizing the dimensional validity bound is essential for safe CDSS deployment in multimorbid populations.
 
-\textbf{Keywords:} clinical decision support; artificial intelligence; dimensional validity; multimorbidity; coupled dynamical systems; AI regulation
+\textbf{Keywords:} clinical decision support; machine learning evaluation; high-dimensional inference; multimorbidity; model validity
 \end{abstract}
+
+\section{Background and Significance}
+
+Despite the proliferation of high-performance algorithms in clinical medicine, real-world deployment has been plagued by reliability failures that aggregate validation metrics failed to predict. High-profile examples---the degradation of the Epic Sepsis Model in external validation, the limited generalizability of IBM Watson for Oncology, the systematic underperformance of COVID-19 prognostic models---suggest a gap between validation performance and deployment reality. Current explanations focus on dataset shift, label leakage, or implementation failures. We propose a more fundamental, structural cause: the \textbf{dimensional mismatch} between low-dimensional clinical models and high-dimensional patient physiology.
+
+Clinical prediction is widely assumed to be a ``capacity'' problem---solvable with more data and deeper networks. However, information theory suggests that when the entropy of a system (the patient) exceeds the channel capacity of the observer (the model) by a critical margin, inference becomes not just difficult, but structurally ill-posed (Fano's inequality). In this study, we formalize this limit as the \textbf{Dimensional Validity Bound}.
+
+\textbf{Objectives.} We (1) formalize the dimensional validity bound for clinical prediction as a function of patient effective dimensionality and model capacity, (2) identify three mechanisms by which validity fails below this bound (projection error, noise amplification, hypothesis space explosion), and (3) empirically test these predictions in a large ICU cohort stratified by multimorbidity.
 
 \section{Introduction}
 
-Clinical decision support systems (CDSS) and artificial intelligence promise to transform healthcare through algorithmic precision \citep{rajkomar2019}. Yet a troubling pattern emerges in deployment: the Epic Sepsis Model, deployed across hundreds of hospitals, showed an AUC of just 0.63 in external validation---little better than chance \citep{wong2021}. IBM Watson for Oncology was withdrawn after recommending unsafe treatments \citep{strickland2019}. Electronic health record alerts generate override rates exceeding 90\% \citep{ancker2017}. Systems trained on millions of examples fail unpredictably in atypical presentations \citep{topol2019}.
+The remarkable success of statistical learning in healthcare has created an implicit assumption: given sufficient data, appropriate algorithms, and careful validation, clinical prediction problems are solvable in principle. Performance may plateau, but the problem itself remains well-posed. ROC curves measure discrimination, calibration plots measure reliability, and the gap between current performance and perfect prediction represents reducible error.
 
-The standard response---more data, better algorithms, larger models---misses the structural nature of the problem. \citet{berisha2021} identified this as the ``curse of dimensionality'' in digital medicine: clinical data are inherently high-dimensional and sparse, producing blind spots where AI models appear validated but fail unpredictably. We extend this analysis to its logical conclusion: \emph{when patient state dimensionality exceeds algorithmic tractability bounds, no amount of additional data or model refinement can restore validity.}
+We demonstrate that this assumption fails in a specific, identifiable regime. When the effective dimensionality of the system being predicted exceeds the representational capacity of the observer by a critical ratio, the inference problem becomes \textit{structurally ill-posed}. This is not a limitation of current methods---it is an information-theoretic impossibility. No amount of additional data, algorithmic sophistication, or computational resources can rescue validity in this regime, because the problem itself has become undefined.
 
-Consider the multimorbid patient in the emergency department: CKD stage 3, COPD with recent exacerbation, HFpEF, type 2 diabetes, and chronic pain on opioids. The EHR generates 7--10 alerts. The sepsis model fires. The drug interaction checker flags three combinations. Each tool was validated in isolation; none can integrate the high-dimensional interaction space. The clinician overrides everything and relies on gestalt---not because the patient is ``too complex,'' but because the algorithm cannot distinguish the \textit{conflicting signals} of multiple active pathologies from the \textit{deterministic collapse} of end-stage disease.
+The failure mode is subtle. Standard metrics continue to produce numbers. Models can be trained, validated, and deployed. AUC values appear reasonable. But these metrics are measuring the wrong thing: they report how well the model separates outcomes \textit{within its low-dimensional projection} of reality, not whether that projection preserves the structure needed for valid inference.
 
-This is not an edge case. Chronic multimorbidity affects 38\% of Australians \citep{aihw2024} and the majority of patients over 65. The same tools that reduce errors in routine cases become actively misleading in the moderate-complexity transition zone---where neither healthy priors nor disease attractors provide reliable guidance.
+We formalize this as the \textbf{dimensional validity bound}: the critical ratio of observer to system dimensionality below which statistical learning becomes unreliable. The bound emerges from applying Fano's inequality to the inference problem: when the entropy of the system state exceeds the observer's channel capacity, error probability has a non-vanishing lower bound regardless of the inference strategy employed.
 
-We formalize this as the \textbf{dimensional validity bound}: the critical ratio of observer complexity to patient complexity below which algorithmic recommendations become unreliable. This paper demonstrates through simulation and clinical data analysis that:
-\begin{enumerate}
-    \item Diagnostic cascade probability follows predictable mathematical laws---exceeding 50\% beyond 14 tests
-    \item Observer-patient coupling becomes unstable when dimensional ratio $r < 0.3$
-    \item Classifier performance shows a U-shaped relationship with multimorbidity---worst in the moderate ``zone of maximum entropy''
-    \item Practical complexity metrics can trigger appropriate human override
-\end{enumerate}
+Three distinct mechanisms drive failure below the validity bound:
 
-\section{Background}
+\textbf{1. Projection error.} When $D_{\text{observer}} < D_{\text{system}}$, the model necessarily performs lossy compression. Distinctions that exist in the full state space collapse to indistinguishable representations. This is mathematically unavoidable---no algorithm can preserve information it lacks capacity to represent.
 
-\subsection{The Curse of Dimensionality in Clinical AI}
+\textbf{2. Noise amplification.} Higher-dimensional system states amplify variance when projected onto lower-dimensional models. Small perturbations in unmeasured dimensions propagate as large, unpredictable fluctuations in predictions. The model experiences this as irreducible aleatoric uncertainty.
 
-Classical Bayesian diagnosis assumes a discrete, enumerable hypothesis space with tractable priors and computable likelihoods \citep{sox1988}. This framework works when reality matches these assumptions: bacterial versus viral infection, pulmonary embolism probability scores, acute coronary syndrome risk stratification.
+\textbf{3. Hypothesis space explosion.} As system dimensionality grows, the number of distinguishable states scales exponentially. Bayesian priors become unstable because no training set can adequately cover the hypothesis space. The posterior becomes dominated by prior assumptions rather than observed evidence.
 
-However, when patient complexity grows---genomic variants, proteomic profiles, comorbidity interactions, social determinants---the hypothesis space becomes intractable. The number of distinguishable patient states scales exponentially with dimension, while available training data and computational resources scale polynomially at best.
+We validate these predictions in clinical medicine---a domain where the dimensional validity bound has immediate practical consequences. Patients are high-dimensional dynamical systems; clinical decision support algorithms operate in low-dimensional feature spaces. The mismatch is structural, and the consequences are predictable.
 
-\citet{cunningham2014} introduced effective dimensionality ($D_{\text{eff}}$) as a key metric in neural data analysis:
+\section{Theory}
+
+\subsection{Effective Dimensionality}
+
+We adopt the participation ratio as our measure of effective dimensionality \citep{cunningham2014}:
 \begin{equation}
 D_{\text{eff}} = \frac{\left(\sum_i \lambda_i\right)^2}{\sum_i \lambda_i^2}
 \end{equation}
-where $\lambda_i$ are eigenvalues of the covariance matrix. This ``participation ratio'' measures how many dimensions contribute meaningfully to variance. We apply this metric to clinical patient states.
+where $\lambda_i$ are eigenvalues of the covariance matrix. The participation ratio is widely used in neuroscience and physics as a measure of manifold dimensionality, where it has been shown to correlate with system degrees of freedom across domains from neural population activity to quantum systems \citep{cunningham2014}. We use it here because it is basis-invariant and captures both heavy-tailed and flat spectra with a single scalar. This metric measures how many dimensions contribute meaningfully to variance---a system with one dominant principal component has $D_{\text{eff}} \approx 1$; a system with variance spread uniformly across $n$ dimensions has $D_{\text{eff}} \approx n$.
 
-\subsection{Diagnostic Cascades}
+\subsection{The Dimensional Validity Bound}
 
-Diagnostic cascade failure occurs when an initial test finding triggers additional investigations, each carrying false-positive risk \citep{ganguli2019}. With $m$ independent tests each having false-positive rate $\epsilon$, the probability of at least one false positive is:
+Let an observer operate in $D_{\text{obs}}$ effective dimensions while the system state occupies $D_{\text{sys}}$ effective dimensions. Define the dimensional ratio:
+\begin{equation}
+r = \frac{D_{\text{obs}}}{D_{\text{sys}}}
+\end{equation}
+
+\textbf{Dimensional validity principle.} \textit{Under standard assumptions on observation noise and coupling dynamics, stable inference requires a dimensional ratio $r$ above a critical value $r^*$. Below this threshold, the expected tracking error satisfies:}
+\begin{equation}
+\mathbb{E}[\text{error}] \geq f\left(\frac{D_{\text{sys}}}{D_{\text{obs}}}\right)
+\end{equation}
+\textit{for some monotonically increasing function $f$, and the inference problem becomes ill-posed.} We do not attempt to identify $f$ analytically; here it serves to emphasize that the lower bound on error grows monotonically with dimensional mismatch. The critical value $r \approx 0.3$ emerges from the coupled oscillator simulations in Section 3.2 and should be interpreted as an order-of-magnitude characteristic of the phase transition, not a universal constant.
+
+\textbf{Information-theoretic motivation.} The bound follows from Fano's inequality applied to the inference problem. Consider a system state $X$ with entropy $H(X) \propto D_{\text{sys}}$, where $D_{\text{sys}}$ is the effective dimensionality defined in Section 2.1---higher-dimensional states have exponentially more distinguishable configurations. Let $|\mathcal{X}|$ denote the number of distinguishable system states in the relevant observation window. An observer with representational capacity $C \propto D_{\text{obs}}$ cannot reliably infer $X$ when $C < H(X)$. Specifically, Fano's inequality guarantees:
+\begin{equation}
+P(\text{error}) \geq \frac{H(X) - C - 1}{\log|\mathcal{X}|}
+\end{equation}
+Since $H(X)$ scales with $D_{\text{sys}}$ (as measured by the participation ratio), increasing system dimensionality at fixed observer capacity necessarily increases the lower bound on error. The critical value $r^* \approx 0.3$ is estimated from dynamical systems simulations (Section 3) rather than analytically derived, and represents an order-of-magnitude threshold.
+
+This is analogous to Shannon's channel capacity: it defines a regime where no inference strategy can succeed, regardless of algorithmic sophistication.
+
+\subsection{Why Standard Metrics Fail}
+
+ROC curves and AUC measure a model's ability to rank instances by predicted probability within its \textit{projected} representation of the system. When projection error is severe, this ranking preserves little of the structure present in the full state space.
+
+Consider: a model operating in 10 dimensions facing a 100-dimensional system ($r = 0.1$) will collapse many distinct system states to the same model representation. Spectrally, this occurs because the observer retains only the top $D_{\text{obs}}$ principal directions; the tail of the eigenvalue spectrum acts as unmeasured latent variation, producing systematic conflation of distinct states. The model can achieve good separation \textit{among states it can distinguish}, while systematically failing on states it conflates. Aggregate AUC averages over both, producing a number that conceals the structural failure.
+
+The problem is worse in the intermediate complexity regime. Very low-complexity systems (low $D_{\text{sys}}$) are genuinely tractable. Very high-complexity systems often collapse into stereotyped attractors that paradoxically simplify prediction. The \textit{moderate} complexity regime---where $D_{\text{sys}}$ is high but the system hasn't collapsed---is where the validity bound bites hardest.
+
+We term this the \textbf{``zone of maximum entropy''}: the regime where posterior instability is maximal and standard metrics are most misleading.
+
+\section{Simulation Studies}
+
+We conducted three simulation studies corresponding to the three failure mechanisms.
+
+\subsection{Diagnostic Cascade: Hypothesis Space Explosion}
+
+When an observer performs multiple tests, each with false-positive rate $\epsilon$, the probability of at least one spurious positive is:
 \begin{equation}
 P(\text{cascade}) = 1 - (1-\epsilon)^m
 \end{equation}
 
-For $\epsilon = 0.05$ and $m = 20$ tests, this yields 64\% probability of cascade initiation---yet this ensemble statistic is rarely communicated to clinicians ordering multiple investigations.
-
-\subsection{Dimensional Matching}
-
-Ashby's Law of Requisite Variety states that to reliably regulate a system, the regulator must possess at least as much internal complexity as the disturbances it controls \citep{ashby1956}. Applied to clinical reasoning: an algorithm operating in $D_{\text{algorithm}} \sim 10$ dimensions cannot reliably characterize patients in $D_{\text{patient}} \sim 100$ dimensions.
-
-We operationalize this as the dimensional matching ratio:
-\begin{equation}
-r = \frac{D_{\text{observer}}}{D_{\text{patient}}}
-\end{equation}
-
-When $r \ll 1$, algorithmic recommendations become unreliable; when $r \approx 1$ (expert clinician), stable diagnostic coupling is possible.
-
-\subsection{The Dimensional Validity Bound}
-
-We formalize the relationship between dimensional mismatch and algorithmic reliability:
-
-\textbf{Proposition (Simulation-Supported Dimensional Validity Bound).} \textit{Let an observer operate in $D_{\text{obs}}$ effective dimensions while the patient state occupies $D_{\text{pat}}$ effective dimensions. Under standard assumptions on observation noise and coupling dynamics, the expected tracking error satisfies:}
-\begin{equation}
-\mathbb{E}[\text{error}] \geq f\left(\frac{D_{\text{pat}}}{D_{\text{obs}}}\right)
-\end{equation}
-\textit{for some monotonically increasing function $f$, and stable coupling requires:}
-\begin{equation}
-r = \frac{D_{\text{obs}}}{D_{\text{pat}}} \gtrsim 0.3
-\end{equation}
-
-\textbf{Information-theoretic motivation.} The bound follows from applying Fano's inequality to the clinical inference problem. Consider a patient state with entropy $H(X) \propto D_{\text{pat}}$ (higher-dimensional states have more distinguishable configurations). An observer with representational capacity $C \propto D_{\text{obs}}$ cannot reliably infer $X$ when $C < H(X)$. Specifically, Fano's inequality guarantees a non-vanishing error probability:
-\begin{equation}
-P(\text{error}) \geq \frac{H(X) - C - 1}{\log|\mathcal{X}|}
-\end{equation}
-When $D_{\text{obs}}/D_{\text{pat}} \ll 1$, this lower bound becomes substantial. The specific critical value $r \approx 0.3$ is estimated from our Kuramoto simulations (Section 4.2) rather than analytically derived, and should be interpreted as an order-of-magnitude threshold that may vary by clinical domain.
-
-This bound is analogous to Shannon's channel capacity: it defines a region of patient complexity where no model constrained to low-dimensional hypothesis spaces can reliably perform, regardless of training data volume or algorithmic sophistication.
-
-\subsection{Three Failure Modes of Complexity}
-
-When $r < 0.3$, algorithmic clinical reasoning fails through three distinct but related mechanisms:
-
-\textbf{1. Projection Error.} When $D_{\text{obs}} < D_{\text{pat}}$, the algorithm necessarily performs lossy compression of patient state. Clinically relevant distinctions that exist in the full state space collapse to indistinguishable representations in the reduced space. This is mathematically unavoidable---no algorithm can preserve information it lacks capacity to represent.
-
-\textbf{2. Noise Amplification.} Higher-dimensional patient states amplify variance when projected onto lower-dimensional models. Small perturbations in unmeasured dimensions propagate as large, unpredictable fluctuations in model predictions. The classifier experiences this as irreducible aleatoric uncertainty that increases with dimensional mismatch.
-
-\textbf{3. Hypothesis Space Explosion.} As patient dimensionality grows, the number of distinguishable clinical states scales exponentially. Bayesian priors become unstable because no training set can adequately cover the hypothesis space. The posterior becomes dominated by prior assumptions rather than observed evidence.
-
-Each simulation study in this paper corresponds to one failure mode: dimensional matching captures projection error, classifier degradation captures noise amplification, and diagnostic cascades capture hypothesis space explosion through multiple testing.
-
-\subsection{Clinical Interpretation of Effective Dimensionality}
-
-For clinicians, $D_{\text{eff}}$ can be interpreted as:
-\begin{itemize}
-    \item \textbf{Complication surface area:} Higher $D_{\text{eff}}$ means more independent ways the patient can deteriorate
-    \item \textbf{Feature redundancy:} Low $D_{\text{eff}}$ indicates correlated features; high $D_{\text{eff}}$ indicates each measurement carries unique information
-    \item \textbf{Outcome variance:} Within a diagnostic category, high $D_{\text{eff}}$ predicts greater heterogeneity in treatment response
-    \item \textbf{Trajectory unpredictability:} High $D_{\text{eff}}$ patients have more variable length of stay and mortality risk
-\end{itemize}
-
-A patient with CKD, COPD, HFpEF, diabetes, and chronic pain does not simply have ``five diseases''---they occupy a high-dimensional state space where comorbidity interactions create emergent complexity that categorical diagnosis codes cannot capture.
-
-\section{Methods}
-
-\subsection{Simulation Studies}
-
-We conducted four simulation studies to characterize dimensional validity bounds:
-
-\subsubsection{Diagnostic Cascade Simulation}
-We simulated 10,000 patients undergoing 1--50 independent tests with per-test false-positive rate $\epsilon = 0.05$. We computed theoretical and empirical cascade probabilities and expected false-positive counts.
-
-\subsubsection{Dynamical Systems Model of Clinical Coupling}
-Clinical diagnosis is fundamentally a coupling problem: the clinician's internal model must synchronize with the patient's state to achieve accurate representation. We formalize this using coupled oscillator dynamics, where patient physiology occupies a high-dimensional state space ($D_{\text{patient}} = 100$) and the observer (algorithm or clinician) operates in a lower-dimensional representation space ($D_{\text{observer}} \in \{5, 10, 20, 30, 50, 70, 100\}$).
-
-This is not merely a metaphor. The mathematics of coupled dynamical systems---synchronization thresholds, stability conditions, information transfer rates---apply directly to any system where one entity must track another through noisy observations. The clinician-patient dyad satisfies these conditions: continuous state evolution, discrete observation windows, and the requirement for predictive accuracy.
-
-We measured synchronization error and coupling stability across 20 trials per condition, deriving the critical dimensional ratio below which stable coupling becomes impossible.
-
-\subsubsection{Classifier Degradation Simulation}
-We generated synthetic patient data with 50 features, 10 informative, and varying complexity levels. Random forest classifiers were evaluated via 5-fold cross-validation, stratified by patient complexity.
-
-\subsubsection{Treatment Heterogeneity Simulation}
-We simulated 2,000 patients across 5 diagnostic categories, with hidden high-dimensional state ($D = 20$) determining treatment response. We quantified within-diagnosis outcome variance attributable to hidden dimensionality.
-
-\subsection{Clinical Validation: MIMIC-IV}
-
-\subsubsection{Data Source}
-We validated simulation predictions using MIMIC-IV v3.1, a freely-available critical care database containing 364,627 unique patients and 546,028 hospitalizations at Beth Israel Deaconess Medical Center (2008--2022) \citep{johnson2023}.
-
-\subsubsection{Cohort Selection}
-We included adult hospitalizations ($\geq$ 18 years) with complete demographic and diagnosis data. Exclusion criteria: missing mortality outcome, length of stay $<$ 1 day.
-
-\subsubsection{Feature Construction}
-Patient features included:
-\begin{itemize}
-    \item Demographics: age, sex
-    \item Diagnoses: one-hot encoding of top 50 ICD codes
-    \item Multimorbidity count: total diagnosis codes per admission
-\end{itemize}
-
-\subsubsection{Multimorbidity Stratification}
-Patients were stratified into tertiles based on ICD code count: \textbf{Low} (1--8 codes), \textbf{Moderate} (9--15 codes), and \textbf{High} (16+ codes) multimorbidity burden. We reserve the term ``complexity'' for dimensional complexity ($D_{\text{eff}}$) to avoid confusing clinical burden with statistical structure.
-
-\subsubsection{Outcome Measures}
-Primary outcomes: in-hospital mortality, length of stay. Secondary outcome: mortality classifier AUC by complexity stratum.
-
-\subsubsection{Statistical Analysis}
-We computed $D_{\text{eff}}$ for each complexity stratum using the participation ratio of covariance eigenvalues. Gradient boosting classifiers were trained for mortality prediction with 5-fold stratified cross-validation. Performance was compared across strata using AUC-ROC.
-
-\subsection{Ethical Considerations}
-MIMIC-IV is de-identified and approved for research use. This study required no additional ethics approval per PhysioNet data use agreement.
-
-\section{Results}
-
-\subsection{Diagnostic Cascade Simulation}
-
-Figure~\ref{fig:cascade} shows diagnostic cascade probability as a function of test count. At the conventional $\alpha = 0.05$ threshold:
+We simulated 10,000 systems undergoing 1--50 independent tests with $\epsilon = 0.05$. Results confirm:
 \begin{itemize}
     \item 10 tests: 40\% cascade probability
-    \item 14 tests: 50\% cascade probability
+    \item 14 tests: 50\% threshold
     \item 20 tests: 64\% cascade probability
     \item 30 tests: 79\% cascade probability
 \end{itemize}
 
-Theoretical predictions matched simulated outcomes precisely ($r^2 > 0.999$). Expected false positives scaled linearly: $E[\text{FP}] = m \times \epsilon$. This illustrates the \textbf{hypothesis space explosion} failure mode: as test count grows, the number of distinguishable outcome patterns explodes exponentially, making at least one spurious positive increasingly certain.
+Theoretical predictions matched simulation precisely ($r^2 > 0.999$). This illustrates hypothesis space explosion: as test count grows, the number of distinguishable outcome patterns explodes exponentially.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/fig1_diagnostic_cascade.png}
-\caption{Diagnostic cascade probability (left) and expected false positives (right) as functions of test count. At 5\% per-test false-positive rate, probability of $\geq$1 spurious finding exceeds 50\% beyond 14 tests.}
-\label{fig:cascade}
-\end{figure}
+\subsection{Coupled Oscillator Dynamics: Projection Error}
 
-\subsection{Dimensional Matching Simulation}
+We modeled the observer-system relationship as coupled oscillator dynamics, where the system occupies a high-dimensional state space ($D_{\text{sys}} = 100$) and the observer operates in a lower-dimensional representation space ($D_{\text{obs}} \in \{5, 10, 20, 30, 50, 70, 100\}$).
 
-Figure~\ref{fig:matching} shows coupling stability as a function of dimensional ratio $r = D_{\text{observer}}/D_{\text{patient}}$.
+This is not merely metaphor. The mathematics of coupled dynamical systems---synchronization thresholds, stability conditions, information transfer rates---apply to any system where one entity must track another through noisy observations.
 
 Critical findings:
 \begin{itemize}
@@ -221,26 +145,20 @@ Critical findings:
     \item $r = 1.0$: Full dimensional matching; stable synchronization
 \end{itemize}
 
-This suggests CDSS operating with $D \sim 10$ features facing patients with $D \sim 100$ effective dimensions ($r = 0.1$) are in the unstable coupling regime. This corresponds to the \textbf{projection error} failure mode: the algorithm cannot preserve clinically relevant distinctions when forced to represent high-dimensional patients in a low-dimensional space.
+Models operating with $D \sim 10$ features facing systems with $D \sim 100$ effective dimensions are in the unstable regime.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/fig2_dimensional_matching.png}
-\caption{Coupling stability (left) and synchronization error (right) as functions of dimensional matching ratio. Critical threshold at $r \approx 0.3$ suggests minimum observer complexity requirements.}
-\label{fig:matching}
-\end{figure}
+\subsection{Classifier Degradation: Noise Amplification}
 
-\subsection{Classifier Degradation and Recovery}
+We generated synthetic data with 50 features, 10 informative, and varying complexity levels. Random forest classifiers were evaluated via 5-fold cross-validation.
 
-Synthetic data analysis confirmed a \textbf{U-shaped} relationship between classifier performance and multimorbidity burden (Table~\ref{tab:classifier}), mirroring the MIMIC-IV findings. Effective dimensionality decreases with multimorbidity (loss of complexity), while AUC is worst in the moderate stratum---the zone of maximum entropy where posterior instability peaks.
+Results confirmed a \textbf{U-shaped} relationship between classifier performance and system complexity:
 
 \begin{table}[h]
 \centering
-\caption{Classifier performance by multimorbidity burden (synthetic simulation)}
-\label{tab:classifier}
+\caption{Classifier performance by system complexity (simulation)}
 \begin{tabular}{lccc}
 \toprule
-Multimorbidity & N & $D_{\text{eff}}$ & AUC (mean $\pm$ SD) \\
+Complexity & N & $D_{\text{eff}}$ & AUC (mean $\pm$ SD) \\
 \midrule
 Low & 1000 & 41.0 & 0.91 $\pm$ 0.02 \\
 Moderate & 1000 & 32.9 & \textbf{0.61 $\pm$ 0.03} \\
@@ -249,130 +167,104 @@ High & 1000 & 24.9 & 0.85 $\pm$ 0.04 \\
 \end{tabular}
 \end{table}
 
-\subsection{Treatment Heterogeneity}
+The moderate complexity stratum shows worst performance---the zone of maximum entropy where posterior instability peaks.
 
-Within-diagnosis treatment response variance was substantial: mean coefficient of variation = 0.42 across diagnostic categories. This hidden heterogeneity reflects the ``missing dimensions''---patient state information not captured by categorical diagnosis. Patients assigned identical diagnostic codes exhibited markedly different treatment responses, with variance attributable to unmeasured high-dimensional state rather than measurement noise.
+\section{Case Study: Clinical Prediction in High-Dimensional Patients}
 
-\subsection{MIMIC-IV Validation}
+To test whether the dimensional validity bound manifests in real-world high-dimensional systems, we analyzed mortality prediction in the MIMIC-IV critical care database \citep{johnson2023}.
 
-We analyzed 425,216 hospitalizations from MIMIC-IV v3.1 meeting inclusion criteria (Table~\ref{tab:cohort}).
+\subsection{Why Clinical Medicine?}
 
-\begin{table}[h]
-\centering
-\caption{Cohort characteristics by multimorbidity burden (MIMIC-IV, N=425,216).}
-\label{tab:cohort}
-\begin{tabular}{lccc}
-\toprule
-Characteristic & Low & Moderate & High \\
-\midrule
-N & 159,211 & 128,979 & 137,026 \\
-Diagnoses, median & 6 & 12 & 21 \\
-In-hospital mortality, \% & 0.3 & 1.1 & 5.8 \\
-\bottomrule
-\end{tabular}
-\end{table}
+Clinical medicine provides an ideal test case for the dimensional validity bound:
+\begin{itemize}
+    \item \textbf{Genuine high-dimensionality:} Patients are biological systems with genomic, proteomic, metabolic, and physiological state spaces far exceeding typical model dimensionality.
+    \item \textbf{Systematic dimensional mismatch:} Clinical decision support algorithms operate in $\sim$10--50 dimensional feature spaces facing patients with $D_{\text{eff}} \sim 30$--100.
+    \item \textbf{Known failure patterns:} High-profile clinical AI failures (Epic Sepsis Model, IBM Watson for Oncology) exhibit signatures consistent with dimensional validity violations.
+    \item \textbf{Measurable complexity gradients:} Multimorbidity provides a natural axis of complexity variation within a single population.
+\end{itemize}
 
-Dimensional complexity ($D_{\text{eff}}$) \textit{decreased} as multimorbidity increased: 44.3 (low), 37.5 (moderate), 29.5 (high burden). This counterintuitive result---\textit{as multimorbidity increases, dimensional complexity collapses}---supports the complex systems view that aging and illness reduce physiological complexity \citep{cohen2022}. Illness is a manifold reduction process: a healthy body maintains high degrees of freedom (high $D_{\text{eff}}$), but as organ systems fail they become coupled (cardiorenal syndrome, hepatorenal syndrome). High-multimorbidity patients converge toward stereotyped disease attractors, \textit{reducing} dimensional spread despite increased clinical burden.
+\subsection{Methods}
 
-This reverses the naive assumption that ``more multimorbid patients are more high-dimensional.'' Clinical burden (more ICD codes) increases monotonically with multimorbidity, but \textit{dimensional} complexity ($D_{\text{eff}}$) collapses in the sickest patients as they fall into stereotyped disease attractors. The dimensional validity bound therefore bites hardest in the \textit{moderate} regime, where $D_{\text{eff}}$ is still high but outcomes are not yet deterministic.
+We analyzed 425,216 adult hospitalizations from MIMIC-IV v3.1, stratifying by multimorbidity burden (ICD code count): Low (1--8), Moderate (9--15), High (16+). For each stratum, we computed $D_{\text{eff}}$ from clinical features and evaluated gradient boosting classifier performance for mortality prediction via 5-fold cross-validation.
 
-Classifier performance showed a U-shaped relationship with multimorbidity (Table~\ref{tab:mimic_classifier}, Figure~\ref{fig:validity_bound}).
+\textbf{Ethics approval.} This study used publicly available, de-identified data from the MIMIC-IV database \citep{johnson2023}. In accordance with institutional policy, analysis of these data is exempt from human subjects review and did not require informed consent.
+
+\subsection{Results}
 
 \begin{table}[h]
 \centering
-\caption{Classifier performance by multimorbidity burden (MIMIC-IV, N=425,216).}
-\label{tab:mimic_classifier}
+\caption{Dimensional validity bound in clinical data (MIMIC-IV, N=425,216)}
 \begin{tabular}{lcccc}
 \toprule
 Multimorbidity & N & $D_{\text{eff}}$ & Mortality \% & AUC (95\% CI) \\
 \midrule
 Low & 159,211 & 44.3 & 0.3 & 0.867 (0.858--0.876) \\
-Moderate & 128,979 & 37.5 & 1.1 & 0.835 (0.832--0.839) \\
+Moderate & 128,979 & 37.5 & 1.1 & \textbf{0.835 (0.832--0.839)} \\
 High & 137,026 & 29.5 & 5.8 & 0.859 (0.851--0.867) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/fig3_validity_bound.png}
-\caption{The dimensional validity bound in MIMIC-IV. As multimorbidity burden increases (x-axis), effective dimensionality \textit{decreases} (blue line, left axis)---illness is a manifold collapse. Classifier performance (AUC, red squares, right axis) shows a U-shaped relationship: lowest in the \textit{moderate} multimorbidity regime where dimensional complexity remains high but outcomes are not yet deterministic. This ``zone of maximum entropy'' is a regime of posterior instability where Bayesian inference fails.}
-\label{fig:validity_bound}
-\end{figure}
+Notably, the $D_{\text{eff}}$ range observed in MIMIC (29.5--44.3) closely matches the simulation parameters (24.9--41.0 in Table 1), providing a consistency check between the synthetic and real-world analyses.
 
-\subsubsection{The Zone of Maximum Entropy}
-The validity bound manifests not at the extremes but in the \textit{moderate} multimorbidity regime (AUC = 0.835)---the ``zone of maximum entropy'' where Bayesian inference is most fragile (Figure~\ref{fig:validity_bound}). This is where the ``tail-chasing'' failure mode operates:
+Two findings confirm theoretical predictions:
 
-\begin{itemize}
-    \item \textbf{Low multimorbidity} (high $D_{\text{eff}} = 44.3$): Patients are sparse in feature space with strong healthy-state priors. Despite high dimensional diversity, outcomes are rare and clearly distinguishable. \textit{Bayesian inference works.}
-    \item \textbf{High multimorbidity} (low $D_{\text{eff}} = 29.5$): Patients have collapsed into stereotyped disease attractors. Organ systems are coupled; trajectories are low-dimensional and quasi-deterministic. The algorithm finds this easier to predict because the manifold has simplified. \textit{Bayesian inference works (tragically).}
-    \item \textbf{Moderate multimorbidity} ($D_{\text{eff}} = 37.5$): The transition zone. Patients have activated multiple pathological dimensions but haven't synchronized into a ``dying'' state. Priors are flat, likelihoods are noisy, and the hypothesis space remains high-dimensional. \textit{This is where the tail-chasing happens.}
-\end{itemize}
+\textbf{1. Effective dimensionality decreases with multimorbidity.} Counter to naive intuition (``sicker patients are more complex''), $D_{\text{eff}}$ drops from 44.3 to 29.5 as multimorbidity increases. This supports the complex systems view that illness represents loss of physiological complexity \citep{cohen2022}---diseased systems collapse into stereotyped attractors as organ coupling increases (cardiorenal syndrome, hepatorenal syndrome).
+
+\textbf{2. Classifier performance shows the predicted U-shape.} Worst AUC (0.835) occurs in the \textit{moderate} multimorbidity stratum---the zone of maximum entropy. Low-multimorbidity patients have high $D_{\text{eff}}$ but sparse outcomes (strong priors dominate). High-multimorbidity patients have low $D_{\text{eff}}$ (collapsed dynamics are quasi-deterministic). The moderate regime has high $D_{\text{eff}}$ \textit{and} uncertain outcomes---maximum posterior instability.
+
+This reverses standard assumptions about where models struggle. The dimensional validity bound bites hardest not in the sickest patients but in the \textit{moderate} complexity transition zone that aggregate AUC systematically conceals.
 
 \section{Discussion}
 
-\subsection{Principal Findings}
+\subsection{When Aggregate Metrics Conceal Structural Failure}
 
-Our simulations and clinical data analysis demonstrate that patient complexity imposes fundamental validity bounds on algorithmic clinical reasoning. These bounds are not technical limitations to be overcome with larger datasets or better algorithms---they reflect structural mismatch between low-dimensional computational architectures and high-dimensional patient states.
+The dimensional validity bound identifies a regime where standard evaluation metrics become unreliable---not because of insufficient data or poor algorithms, but because the inference problem itself is ill-posed.
 
-Three practical implications emerge:
+Consider what aggregate AUC actually measures: the probability that a randomly chosen positive instance ranks higher than a randomly chosen negative instance \textit{within the model's representation}. When projection error is severe, many distinct system states map to the same representation. The model may achieve excellent separation among distinguishable states while systematically failing on conflated states. Aggregate AUC reports the former; validity depends on the latter.
 
-\textbf{1. Diagnostic cascade awareness.} Clinicians ordering multiple tests should be informed of ensemble false-positive probability. A simple calculator: $P(\text{cascade}) = 1 - 0.95^m$ for $m$ tests at 5\% FPR. EHR systems should display this when ordering panels.
+The zone of maximum entropy is particularly insidious. It is invisible to aggregate metrics, occurs in an intermediate regime that intuition misses, and represents the population where model errors may be most consequential.
 
-\textbf{2. Entropy-triggered override.} CDSS should compute patient complexity (e.g., multimorbidity count, $D_{\text{eff}}$) and display confidence degradation when entering the zone of maximum entropy. Recommendations in the \textit{moderate} multimorbidity regime---where posterior instability peaks---should explicitly flag expert judgment as essential.
+A critical distinction must be drawn between the \textit{ontological} loss of degrees of freedom and the \textit{epistemic} loss of information due to projection. In high-dimensional probability theory, complex systems often appear simple because macroscopic observables concentrate around the mean---this is a measurement artifact (concentration of measure). In contrast, the attractor collapse observed in multimorbidity represents a \textit{physical reduction in the system's accessible state space} \citep{lipsitz1992}. The patient has not merely become hard to measure; they have structurally lost the capacity for physiological variation. Both phenomena produce apparent simplicity from high complexity, but the mechanisms differ: concentration of measure places the simplification in the observation, while attractor collapse places it in the system itself. Aggregate metrics cannot distinguish between these cases.
 
-\textbf{3. Stratified validation.} AI system validation should stratify by patient complexity. Overall AUC masks systematic underperformance in complex patients who may be most vulnerable to algorithmic error.
+\subsection{Implications for Model Deployment}
 
-\textbf{4. Regulatory translation.} Dimensional validity bounds have direct implications for clinical AI governance. The FDA's Good Machine Learning Practice framework, the EU AI Act's risk stratification, and emerging guidelines from TGA and MHRA all require demonstration of safety across intended use populations. We propose that complexity metrics ($D_{\text{eff}}$, multimorbidity count) become mandatory components of:
+Three practical recommendations follow:
+
+\textbf{1. Compute $D_{\text{eff}}$ at runtime.} Before generating predictions, estimate system complexity. When $r < 0.3$, flag that the validity bound may be exceeded.
+
+\textbf{2. Stratify validation by complexity.} Report performance separately for low, moderate, and high complexity strata. Aggregate AUC should not be the sole basis for deployment decisions.
+
+\textbf{3. Design appropriate abstention.} In regimes where the validity bound is violated, models should abstain rather than predict with false confidence.
+
+\subsection{Implications for Evaluation Protocols}
+
+Current evaluation practice assumes that a model validated on a representative sample will perform comparably on deployment data. The dimensional validity bound shows this assumption fails when complexity distributions differ---even if marginal distributions match.
+
+We propose that evaluation protocols include:
 \begin{itemize}
-    \item \textbf{Model Cards:} Stating validated complexity range and expected performance degradation outside bounds
-    \item \textbf{Postmarket surveillance:} Monitoring for complexity-stratified performance drift
-    \item \textbf{Clinical deployment:} Real-time complexity flags triggering ``AI confidence degraded---expert judgment required''
+    \item Mandatory complexity stratification in validation reports
+    \item Explicit statement of the complexity range where validity is demonstrated
+    \item Prospective monitoring for complexity drift in deployed systems
 \end{itemize}
-Just as pharmaceutical regulators require demonstration of efficacy across patient subgroups, AI regulators should require demonstration of validity across the complexity spectrum.
-
-\subsection{Design Principles for Complexity-Aware Clinical AI}
-
-Based on our findings, we propose the following design principles for clinical decision support systems:
-
-\begin{enumerate}
-    \item \textbf{Estimate $D_{\text{eff}}$ at runtime.} Compute patient complexity from available features before generating recommendations. (Addresses all three failure modes by detecting when validity bounds are exceeded.)
-    \item \textbf{Trigger expert override when $r < 0.3$.} Display ``AI confidence degraded---expert judgment required'' when patient dimensionality exceeds model capacity. (Mitigates projection error and noise amplification.)
-    \item \textbf{Display cascade probability when ordering $>$10 tests.} Inform clinicians of ensemble false-positive risk before confirmation. (Mitigates hypothesis space explosion.)
-    \item \textbf{Stratify validation by multimorbidity.} Report AUC separately for low, moderate, and high multimorbidity strata; reject single-AUC performance claims. (Exposes noise amplification that aggregate metrics conceal.)
-    \item \textbf{Avoid deploying in unmeasured complexity regimes.} If training data lacks high-complexity patients, the model should abstain rather than extrapolate. (Prevents all three failure modes in untested regimes.)
-\end{enumerate}
-
-These principles operationalize the dimensional validity bound for practical system design, with each targeting specific failure modes identified in Section 2.5.
-
-\subsection{Comparison with Prior Work}
-
-\citet{berisha2021} identified the curse of dimensionality in digital medicine but focused on AI model training. We extend this to show dimensional limits affect all algorithmic clinical reasoning, including Bayesian frameworks and guideline-based CDSS.
-
-\citet{gallego2017} demonstrated that motor control occupies low-dimensional neural manifolds. Our analysis suggests clinical diagnosis similarly projects high-dimensional patient states onto low-dimensional categorical codes, with predictable information loss.
-
-While intuition suggests that ``sicker patients are harder to predict,'' our results reveal a \textbf{paradox of complexity}: the most multimorbid patients become \textit{easier} to predict (AUC 0.859) as their physiology collapses into low-dimensional disease attractors. The true validity bound lies in the moderate transition zone (AUC 0.835)---the ``zone of maximum entropy'' where neither healthy priors nor disease attractors dominate. This transforms a vague clinical observation into a testable, auditable constraint: flag the moderate-complexity patients, not just the sickest ones.
 
 \subsection{Limitations}
 
-Our simulations make simplifying assumptions: independent test results, uniform complexity across diagnostic categories. The dynamical systems model abstracts away clinical detail while capturing the essential structure of the coupling problem---a low-dimensional observer attempting to track a higher-dimensional patient under noise. MIMIC-IV is single-center (Beth Israel Deaconess Medical Center); findings may not generalize across healthcare systems or to primary care settings. The feature set (demographics + diagnoses) excludes laboratory values and vital signs; richer feature sets may show different complexity patterns. The critical threshold $r \approx 0.3$ should be interpreted as order-of-magnitude guidance; precise cutoffs will vary by clinical domain and require prospective validation.
+Our simulations make simplifying assumptions. The critical threshold $r \approx 0.3$ is empirically estimated and should be interpreted as order-of-magnitude guidance---what we expect to be robust is the \textit{existence} of such a threshold and the qualitative shape of the stability curve, not the specific numerical value. Clinical validation uses a single database (MIMIC-IV) with limited feature sets. The zone of maximum entropy location may vary by domain.
 
-\subsection{Future Directions}
+\subsection{Relation to Prior Work}
 
-\begin{itemize}
-    \item Validate complexity thresholds in prospective clinical studies
-    \item Develop practical $D_{\text{eff}}$ calculators for EHR integration
-    \item Test whether complexity-aware CDSS reduces diagnostic cascades
-    \item Explore information-theoretic bounds (Fano's inequality, channel capacity) as alternative formalizations
-\end{itemize}
+The dimensional validity bound extends several established research threads. The ``curse of dimensionality'' literature \citep{berisha2021} identifies challenges in high-dimensional statistical estimation, but typically frames these as practical limitations requiring more data or better algorithms. We show that beyond a critical ratio, the problem becomes structurally ill-posed---additional data cannot rescue validity. This structural limit connects to our prior work on measurement thresholds and the sub-Landauer domain in biological systems \citep{todd2025}. Recent work on double descent and effective dimension in overparameterized models \citep{belkin2019} reveals non-monotonic generalization behavior; the zone of maximum entropy represents an analogous non-monotonicity in inference validity itself, occurring at the observer-system boundary rather than in model capacity. Our critical threshold is also conceptually related to inference phase transitions identified in statistical physics \citep{zdeborova2016}, where sharp boundaries separate regimes of tractable and intractable inference---though our bound arises at the observer-system interface rather than from computational complexity.
+
+The complex systems view that illness represents loss of physiological complexity \citep{lipsitz1992, goldberger2002} provides the biological substrate for our findings: diseased systems collapse into lower-dimensional attractors, paradoxically simplifying prediction. This connects the dimensional validity bound to the broader literature on physiological dynamics, where reduced heart rate variability, EEG entropy loss, and similar signatures mark pathological transitions. Our contribution is to formalize when this dimensional collapse makes standard evaluation metrics unreliable.
 
 \section{Conclusion}
 
-Patient complexity imposes validity bounds on clinical decision support systems. When effective dimensionality exceeds algorithmic tractability, CDSS recommendations become unreliable. We provide practical tools---cascade probability calculators, dimensional matching thresholds, complexity-stratified validation---to identify when algorithmic authority should yield to expert clinical judgment.
+Statistical learning has limits that are not merely practical but structural. When the effective dimensionality of the system being predicted exceeds the observer's representational capacity by more than approximately threefold, inference becomes ill-posed and standard evaluation metrics become misleading.
 
-Return to our multimorbid patient in the emergency department: CKD stage 3, COPD, HFpEF, type 2 diabetes, chronic pain. The EHR generates seven alerts; the sepsis model fires; the interaction checker flags three combinations. The experienced clinician overrides everything---not from ignorance, but from recognition that this patient occupies the zone of maximum entropy, where conflicting pathologies create posterior instability. Our framework provides the theoretical justification for that override, and design principles to make it systematic rather than ad hoc.
+The dimensional validity bound is not a call for pessimism but for appropriate humility. In domains where models operate well within the bound, current practice is sound. In domains where the bound may be violated---biological systems, social networks, complex physical systems---we need different evaluation protocols, explicit validity checks, and appropriate abstention mechanisms. Because many real-world systems exhibit high intrinsic dimensionality---ecological food webs, financial markets, climate dynamics, immune networks---domains previously assumed to be ``data-hungry but tractable'' may, in fact, lie beyond the regime where statistical learning is well-posed.
 
-Digital medicine must recognize these limits. The goal is not to replace human expertise but to augment it appropriately: deploying algorithmic precision where it works (healthy patients with clear outcomes, or terminal patients with deterministic trajectories) while preserving expert judgment where it is essential (the moderate-complexity transition zone where entropy peaks).
+The zone of maximum entropy represents a systematic blind spot in current evaluation practice. It is invisible to aggregate metrics, occurs in an intermediate complexity regime, and may contain the instances where model errors are most consequential. Recognizing this regime is the first step toward addressing it.
 
 \section*{Acknowledgments}
 None.
@@ -383,11 +275,11 @@ This research did not receive specific funding.
 \section*{Author Contributions}
 I.T. conceived the study, developed the theoretical framework, performed simulations and data analysis, and wrote the manuscript.
 
-\section*{Declaration of Competing Interest}
+\section*{Declaration of Interests}
 The author declares no competing interests.
 
-\section*{Data Availability}
-MIMIC-IV is available via PhysioNet (\url{https://physionet.org/content/mimiciv/}) with credentialed access. Simulation and analysis code is available at \url{https://github.com/todd866/clinical-validity-bounds}.
+\section*{Data and Code Availability}
+MIMIC-IV is available via PhysioNet (\url{https://physionet.org/content/mimiciv/}). Simulation and analysis code is available at \url{https://github.com/todd866/clinical-validity-bounds}.
 
 \bibliography{references}
 
