@@ -47,12 +47,19 @@ The dimensional validity bound is motivated by Fano's inequality: when observer 
 
 ### MIMIC-IV Analysis
 
+**Note:** Patient-level analysis requires MIMIC-IV access via [PhysioNet](https://physionet.org/content/mimiciv/). The `patient_analysis.csv` file is not included in this repository to comply with data use agreements.
+
+To reproduce:
+1. Obtain MIMIC-IV access credentials from PhysioNet
+2. Download `patients.csv.gz`, `admissions.csv.gz`, `diagnoses_icd.csv.gz` to `data/mimic/`
+3. Run the analysis:
+
 ```bash
 cd code
 python mimic_analysis_local.py
 ```
 
-Outputs: `results/classifier_results.csv`, `results/patient_analysis.csv`
+Outputs: `results/classifier_results.csv`, `results/patient_analysis.csv` (generated locally)
 
 ### Simulations & Figures
 

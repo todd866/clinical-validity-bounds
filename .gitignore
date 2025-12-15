@@ -10,6 +10,7 @@
 
 # Data (requires PhysioNet access)
 data/mimic/
+results/patient_analysis.csv
 
 # Python
 __pycache__/
